@@ -74,8 +74,10 @@ void WALKING::walking_thread()
             ThisThread::sleep_for(delay_time * 1ms);
             WALKING::set_tick(1, 1, (int)(1000.0 / 32.0 * period_rear_go) * 1ms);
         }
-
-        ThisThread::sleep_for(100ms);
+        else
+        {
+            ThisThread::sleep_for(100ms);
+        }
     }
 }
 
@@ -202,7 +204,7 @@ void WALKING::walking_func2(void)
             motor_ang_arr[2] = walking_profile[2][walk2_count];
             motor_ang_arr[3] = walking_profile[3][walk2_count];
         }
-        
+
         if (walk2_count == 0) // 1st period
         {
             WALKING::set_tick(1, 1, (int)(1000.0 / 32.0 * period_front_go) * 1ms);

@@ -11,6 +11,7 @@
 #include "PECTORAL.h"
 #include "IMU_3DM.h"
 #include "BUOYANCY.h"
+#include "WALKING.h"
 
 #include <ros.h>
 #include <std_msgs/Int8.h>
@@ -37,6 +38,8 @@ PELVIC pelvic_r(12, 14, &DXL);
 PECTORAL pectoral(1, 2, 3, 4, &DXL);
 
 BUOYANCY buoyancy(98, 99, &DXL); // taesik 추가
+
+WALKING walking(1, 2, 3, 4, &DXL);
 
 MS5837 bar_sensor(p28, p27, 0x76);
 IMU_3DM imu(115200, p13, p14);
@@ -129,34 +132,6 @@ void read_dy_func()
 
 Ticker read_dy_tick;
 
-// Buoyancy Control// taesik 추가
-void buoyancy_initialization()
-{
-  // step1 : torque enable
-  buoyancy.on();
-
-  // step2 : set goal current
-  buoyancy.set_current(125);
-
-  // step3 : go to min buoyancy position
-  buoyancy.write_ang(105000, 105000);
-  if (buoyancy.send_ping() == 1)
-  {
-  }
-  else
-  {
-    // step 4: reboot dynamixel
-    buoyancy.off();
-    buoyancy.on();
-
-    // step5 : set goal current
-    buoyancy.set_current(650);
-
-    // step6 : set zero point
-    buoyancy.write_ang(0, 0);
-  }
-}
-
 void message_v(const underwalker_control::uw_control_v &msg_) // taesik buoyancy callback function
 {
   glob_mode = msg_.mode;
@@ -195,9 +170,10 @@ void message_pec(const underwalker_control::uw_control_pectoral &msg_)
   pectoral.set_period(msg_.period);
 }
 
+char inChar = 0;
+
 int main()
 {
-
   thread1.start(bar_thread);
   // Set desired properties (9600-8-N-1).
   init_main_all();
@@ -225,70 +201,37 @@ int main()
 
   read_dy_tick.attach(&read_dy_func, BLINKING_RATE); // Ticker read_dy_tick(&callback, timing)
 
+  printf("Start\r\n");
+
+  printf("set_profile_0\r\n");
+  walking.set_profile(0, 45, 25, 1);
+  ThisThread::sleep_for(300ms);
+
+  printf("set_profile_1\r\n");
+  walking.set_profile(1, 45, 25, 1);
+  ThisThread::sleep_for(300ms);
+
+  printf("set_profile_2\r\n");
+  walking.set_profile(2, 60, 60, 0);
+  ThisThread::sleep_for(300ms);
+
+  printf("set_profile_3\r\n");
+  walking.set_profile(3, 60, 60, 0);
+  ThisThread::sleep_for(300ms);
+
+  printf("start_walking\r\n");
+  walking.start_walking();
+  ThisThread::sleep_for(300ms);
+  printf("initialization\r\n");
+  buoyancy.initialization();
+  
   while (true)
   {
     led = !led;
-
+    printf("%d  %d\r\n",walking.get_walk_count(1),walking.get_walk_count(2));
     if (glob_mode == 1 && bouy_cali == 0)
     {
-      // step1 : torque enable
-      DXL.make_1byte_packet(98, WRITE, TORQUE_ENABLE, 0); // front buoyancy controller id : 98
-      ThisThread::sleep_for(300ms);
-      DXL.make_1byte_packet(99, WRITE, TORQUE_ENABLE, 0); // rear buoyancy controller id : 99
-      ThisThread::sleep_for(300ms);
-
-      // step2 : operating mode change
-      DXL.make_1byte_packet(98, WRITE, OPER_MODE, 5); // id, inst, adress, data
-      ThisThread::sleep_for(300ms);
-      DXL.make_1byte_packet(99, WRITE, OPER_MODE, 5);
-      ThisThread::sleep_for(300ms);
-
-      // step3 : set speed limitation as infinite
-      DXL.make_4byte_packet(98, WRITE, PROFILE_VEL, 0); // 0 = infinite vel
-      ThisThread::sleep_for(300ms);
-      DXL.make_4byte_packet(99, WRITE, PROFILE_VEL, 0);
-      ThisThread::sleep_for(300ms);
-
-      // step4 : set goal current (for setting zero-point)
-      DXL.make_2byte_packet(98, WRITE, CURRENT_LIMIT, 125); // Current 값을 읽고, 그 읽는 값이 threshold보다 클 경우 set point
-      ThisThread::sleep_for(300ms);
-      DXL.make_2byte_packet(99, WRITE, CURRENT_LIMIT, 125);
-      ThisThread::sleep_for(300ms);
-
-      // step5 : Enable torque
-      DXL.make_1byte_packet(98, WRITE, TORQUE_ENABLE, 1); // front buoyancy controller id : 98
-      ThisThread::sleep_for(300ms);
-      DXL.make_1byte_packet(99, WRITE, TORQUE_ENABLE, 1); // rear buoyancy controller id : 99
-      ThisThread::sleep_for(300ms);
-
-      // step6 : go to min buoyancy position
-      DXL.make_4byte_packet(98, WRITE, GOAL_POSITION, 105000);
-      ThisThread::sleep_for(300ms);
-      DXL.make_4byte_packet(99, WRITE, GOAL_POSITION, 105000);
-      ThisThread::sleep_for(300ms);
-      ThisThread::sleep_for(55s); // wait to go to min pos
-
-      // step7 : reboot dynamixel
-      DXL.Send_Reboot(98);
-      ThisThread::sleep_for(500ms);
-      DXL.Send_Reboot(99);
-      ThisThread::sleep_for(500ms);
-
-      // step8 : set goal current & torque enable
-      DXL.make_2byte_packet(98, WRITE, CURRENT_LIMIT, 650);
-      ThisThread::sleep_for(300ms);
-      DXL.make_2byte_packet(99, WRITE, CURRENT_LIMIT, 650);
-      ThisThread::sleep_for(300ms);
-      DXL.make_1byte_packet(98, WRITE, TORQUE_ENABLE, 1); // front buoyancy controller id : 98
-      ThisThread::sleep_for(300ms);
-      DXL.make_1byte_packet(99, WRITE, TORQUE_ENABLE, 1); // rear buoyancy controller id : 99
-      ThisThread::sleep_for(300ms);
-
-      // step 9: set zero point
-      DXL.make_4byte_packet(98, WRITE, GOAL_POSITION, 0);
-      ThisThread::sleep_for(300ms);
-      DXL.make_4byte_packet(99, WRITE, GOAL_POSITION, 0);
-      ThisThread::sleep_for(300ms);
+      
       bouy_cali = 1;
     }
     else if (glob_mode == 2)
@@ -301,7 +244,7 @@ int main()
       ThisThread::sleep_for(300ms);
     }
 
-    nh.spinOnce(); // callback 함수처리
+    //nh.spinOnce(); // callback 함수처리
 
     /*
     printf("%f   %f %f %f %d   %f %f %f %d   %f %f %f %d \r\n", bar, roll,

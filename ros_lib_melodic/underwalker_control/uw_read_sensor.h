@@ -12,113 +12,180 @@ namespace underwalker_control
   class uw_read_sensor : public ros::Msg
   {
     public:
-      typedef uint32_t _position1_type;
-      _position1_type position1;
-      typedef uint32_t _position2_type;
-      _position2_type position2;
-      typedef uint32_t _position3_type;
-      _position3_type position3;
-      typedef uint32_t _position4_type;
-      _position4_type position4;
-      typedef uint16_t _current1_type;
-      _current1_type current1;
-      typedef uint16_t _current2_type;
-      _current2_type current2;
-      typedef uint16_t _current3_type;
-      _current3_type current3;
-      typedef uint16_t _current4_type;
-      _current4_type current4;
+      uint16_t position[9];
+      int16_t current[9];
+      typedef float _depth_type;
+      _depth_type depth;
+      typedef float _q1_type;
+      _q1_type q1;
+      typedef float _q2_type;
+      _q2_type q2;
+      typedef float _q3_type;
+      _q3_type q3;
+      typedef float _q4_type;
+      _q4_type q4;
 
     uw_read_sensor():
-      position1(0),
-      position2(0),
-      position3(0),
-      position4(0),
-      current1(0),
-      current2(0),
-      current3(0),
-      current4(0)
+      position(),
+      current(),
+      depth(0),
+      q1(0),
+      q2(0),
+      q3(0),
+      q4(0)
     {
     }
 
-    virtual int serialize(unsigned char *outbuffer) const
+    virtual int serialize(unsigned char *outbuffer) const override
     {
       int offset = 0;
-      *(outbuffer + offset + 0) = (this->position1 >> (8 * 0)) & 0xFF;
-      *(outbuffer + offset + 1) = (this->position1 >> (8 * 1)) & 0xFF;
-      *(outbuffer + offset + 2) = (this->position1 >> (8 * 2)) & 0xFF;
-      *(outbuffer + offset + 3) = (this->position1 >> (8 * 3)) & 0xFF;
-      offset += sizeof(this->position1);
-      *(outbuffer + offset + 0) = (this->position2 >> (8 * 0)) & 0xFF;
-      *(outbuffer + offset + 1) = (this->position2 >> (8 * 1)) & 0xFF;
-      *(outbuffer + offset + 2) = (this->position2 >> (8 * 2)) & 0xFF;
-      *(outbuffer + offset + 3) = (this->position2 >> (8 * 3)) & 0xFF;
-      offset += sizeof(this->position2);
-      *(outbuffer + offset + 0) = (this->position3 >> (8 * 0)) & 0xFF;
-      *(outbuffer + offset + 1) = (this->position3 >> (8 * 1)) & 0xFF;
-      *(outbuffer + offset + 2) = (this->position3 >> (8 * 2)) & 0xFF;
-      *(outbuffer + offset + 3) = (this->position3 >> (8 * 3)) & 0xFF;
-      offset += sizeof(this->position3);
-      *(outbuffer + offset + 0) = (this->position4 >> (8 * 0)) & 0xFF;
-      *(outbuffer + offset + 1) = (this->position4 >> (8 * 1)) & 0xFF;
-      *(outbuffer + offset + 2) = (this->position4 >> (8 * 2)) & 0xFF;
-      *(outbuffer + offset + 3) = (this->position4 >> (8 * 3)) & 0xFF;
-      offset += sizeof(this->position4);
-      *(outbuffer + offset + 0) = (this->current1 >> (8 * 0)) & 0xFF;
-      *(outbuffer + offset + 1) = (this->current1 >> (8 * 1)) & 0xFF;
-      offset += sizeof(this->current1);
-      *(outbuffer + offset + 0) = (this->current2 >> (8 * 0)) & 0xFF;
-      *(outbuffer + offset + 1) = (this->current2 >> (8 * 1)) & 0xFF;
-      offset += sizeof(this->current2);
-      *(outbuffer + offset + 0) = (this->current3 >> (8 * 0)) & 0xFF;
-      *(outbuffer + offset + 1) = (this->current3 >> (8 * 1)) & 0xFF;
-      offset += sizeof(this->current3);
-      *(outbuffer + offset + 0) = (this->current4 >> (8 * 0)) & 0xFF;
-      *(outbuffer + offset + 1) = (this->current4 >> (8 * 1)) & 0xFF;
-      offset += sizeof(this->current4);
+      for( uint32_t i = 0; i < 9; i++){
+      *(outbuffer + offset + 0) = (this->position[i] >> (8 * 0)) & 0xFF;
+      *(outbuffer + offset + 1) = (this->position[i] >> (8 * 1)) & 0xFF;
+      offset += sizeof(this->position[i]);
+      }
+      for( uint32_t i = 0; i < 9; i++){
+      union {
+        int16_t real;
+        uint16_t base;
+      } u_currenti;
+      u_currenti.real = this->current[i];
+      *(outbuffer + offset + 0) = (u_currenti.base >> (8 * 0)) & 0xFF;
+      *(outbuffer + offset + 1) = (u_currenti.base >> (8 * 1)) & 0xFF;
+      offset += sizeof(this->current[i]);
+      }
+      union {
+        float real;
+        uint32_t base;
+      } u_depth;
+      u_depth.real = this->depth;
+      *(outbuffer + offset + 0) = (u_depth.base >> (8 * 0)) & 0xFF;
+      *(outbuffer + offset + 1) = (u_depth.base >> (8 * 1)) & 0xFF;
+      *(outbuffer + offset + 2) = (u_depth.base >> (8 * 2)) & 0xFF;
+      *(outbuffer + offset + 3) = (u_depth.base >> (8 * 3)) & 0xFF;
+      offset += sizeof(this->depth);
+      union {
+        float real;
+        uint32_t base;
+      } u_q1;
+      u_q1.real = this->q1;
+      *(outbuffer + offset + 0) = (u_q1.base >> (8 * 0)) & 0xFF;
+      *(outbuffer + offset + 1) = (u_q1.base >> (8 * 1)) & 0xFF;
+      *(outbuffer + offset + 2) = (u_q1.base >> (8 * 2)) & 0xFF;
+      *(outbuffer + offset + 3) = (u_q1.base >> (8 * 3)) & 0xFF;
+      offset += sizeof(this->q1);
+      union {
+        float real;
+        uint32_t base;
+      } u_q2;
+      u_q2.real = this->q2;
+      *(outbuffer + offset + 0) = (u_q2.base >> (8 * 0)) & 0xFF;
+      *(outbuffer + offset + 1) = (u_q2.base >> (8 * 1)) & 0xFF;
+      *(outbuffer + offset + 2) = (u_q2.base >> (8 * 2)) & 0xFF;
+      *(outbuffer + offset + 3) = (u_q2.base >> (8 * 3)) & 0xFF;
+      offset += sizeof(this->q2);
+      union {
+        float real;
+        uint32_t base;
+      } u_q3;
+      u_q3.real = this->q3;
+      *(outbuffer + offset + 0) = (u_q3.base >> (8 * 0)) & 0xFF;
+      *(outbuffer + offset + 1) = (u_q3.base >> (8 * 1)) & 0xFF;
+      *(outbuffer + offset + 2) = (u_q3.base >> (8 * 2)) & 0xFF;
+      *(outbuffer + offset + 3) = (u_q3.base >> (8 * 3)) & 0xFF;
+      offset += sizeof(this->q3);
+      union {
+        float real;
+        uint32_t base;
+      } u_q4;
+      u_q4.real = this->q4;
+      *(outbuffer + offset + 0) = (u_q4.base >> (8 * 0)) & 0xFF;
+      *(outbuffer + offset + 1) = (u_q4.base >> (8 * 1)) & 0xFF;
+      *(outbuffer + offset + 2) = (u_q4.base >> (8 * 2)) & 0xFF;
+      *(outbuffer + offset + 3) = (u_q4.base >> (8 * 3)) & 0xFF;
+      offset += sizeof(this->q4);
       return offset;
     }
 
-    virtual int deserialize(unsigned char *inbuffer)
+    virtual int deserialize(unsigned char *inbuffer) override
     {
       int offset = 0;
-      this->position1 =  ((uint32_t) (*(inbuffer + offset)));
-      this->position1 |= ((uint32_t) (*(inbuffer + offset + 1))) << (8 * 1);
-      this->position1 |= ((uint32_t) (*(inbuffer + offset + 2))) << (8 * 2);
-      this->position1 |= ((uint32_t) (*(inbuffer + offset + 3))) << (8 * 3);
-      offset += sizeof(this->position1);
-      this->position2 =  ((uint32_t) (*(inbuffer + offset)));
-      this->position2 |= ((uint32_t) (*(inbuffer + offset + 1))) << (8 * 1);
-      this->position2 |= ((uint32_t) (*(inbuffer + offset + 2))) << (8 * 2);
-      this->position2 |= ((uint32_t) (*(inbuffer + offset + 3))) << (8 * 3);
-      offset += sizeof(this->position2);
-      this->position3 =  ((uint32_t) (*(inbuffer + offset)));
-      this->position3 |= ((uint32_t) (*(inbuffer + offset + 1))) << (8 * 1);
-      this->position3 |= ((uint32_t) (*(inbuffer + offset + 2))) << (8 * 2);
-      this->position3 |= ((uint32_t) (*(inbuffer + offset + 3))) << (8 * 3);
-      offset += sizeof(this->position3);
-      this->position4 =  ((uint32_t) (*(inbuffer + offset)));
-      this->position4 |= ((uint32_t) (*(inbuffer + offset + 1))) << (8 * 1);
-      this->position4 |= ((uint32_t) (*(inbuffer + offset + 2))) << (8 * 2);
-      this->position4 |= ((uint32_t) (*(inbuffer + offset + 3))) << (8 * 3);
-      offset += sizeof(this->position4);
-      this->current1 =  ((uint16_t) (*(inbuffer + offset)));
-      this->current1 |= ((uint16_t) (*(inbuffer + offset + 1))) << (8 * 1);
-      offset += sizeof(this->current1);
-      this->current2 =  ((uint16_t) (*(inbuffer + offset)));
-      this->current2 |= ((uint16_t) (*(inbuffer + offset + 1))) << (8 * 1);
-      offset += sizeof(this->current2);
-      this->current3 =  ((uint16_t) (*(inbuffer + offset)));
-      this->current3 |= ((uint16_t) (*(inbuffer + offset + 1))) << (8 * 1);
-      offset += sizeof(this->current3);
-      this->current4 =  ((uint16_t) (*(inbuffer + offset)));
-      this->current4 |= ((uint16_t) (*(inbuffer + offset + 1))) << (8 * 1);
-      offset += sizeof(this->current4);
+      for( uint32_t i = 0; i < 9; i++){
+      this->position[i] =  ((uint16_t) (*(inbuffer + offset)));
+      this->position[i] |= ((uint16_t) (*(inbuffer + offset + 1))) << (8 * 1);
+      offset += sizeof(this->position[i]);
+      }
+      for( uint32_t i = 0; i < 9; i++){
+      union {
+        int16_t real;
+        uint16_t base;
+      } u_currenti;
+      u_currenti.base = 0;
+      u_currenti.base |= ((uint16_t) (*(inbuffer + offset + 0))) << (8 * 0);
+      u_currenti.base |= ((uint16_t) (*(inbuffer + offset + 1))) << (8 * 1);
+      this->current[i] = u_currenti.real;
+      offset += sizeof(this->current[i]);
+      }
+      union {
+        float real;
+        uint32_t base;
+      } u_depth;
+      u_depth.base = 0;
+      u_depth.base |= ((uint32_t) (*(inbuffer + offset + 0))) << (8 * 0);
+      u_depth.base |= ((uint32_t) (*(inbuffer + offset + 1))) << (8 * 1);
+      u_depth.base |= ((uint32_t) (*(inbuffer + offset + 2))) << (8 * 2);
+      u_depth.base |= ((uint32_t) (*(inbuffer + offset + 3))) << (8 * 3);
+      this->depth = u_depth.real;
+      offset += sizeof(this->depth);
+      union {
+        float real;
+        uint32_t base;
+      } u_q1;
+      u_q1.base = 0;
+      u_q1.base |= ((uint32_t) (*(inbuffer + offset + 0))) << (8 * 0);
+      u_q1.base |= ((uint32_t) (*(inbuffer + offset + 1))) << (8 * 1);
+      u_q1.base |= ((uint32_t) (*(inbuffer + offset + 2))) << (8 * 2);
+      u_q1.base |= ((uint32_t) (*(inbuffer + offset + 3))) << (8 * 3);
+      this->q1 = u_q1.real;
+      offset += sizeof(this->q1);
+      union {
+        float real;
+        uint32_t base;
+      } u_q2;
+      u_q2.base = 0;
+      u_q2.base |= ((uint32_t) (*(inbuffer + offset + 0))) << (8 * 0);
+      u_q2.base |= ((uint32_t) (*(inbuffer + offset + 1))) << (8 * 1);
+      u_q2.base |= ((uint32_t) (*(inbuffer + offset + 2))) << (8 * 2);
+      u_q2.base |= ((uint32_t) (*(inbuffer + offset + 3))) << (8 * 3);
+      this->q2 = u_q2.real;
+      offset += sizeof(this->q2);
+      union {
+        float real;
+        uint32_t base;
+      } u_q3;
+      u_q3.base = 0;
+      u_q3.base |= ((uint32_t) (*(inbuffer + offset + 0))) << (8 * 0);
+      u_q3.base |= ((uint32_t) (*(inbuffer + offset + 1))) << (8 * 1);
+      u_q3.base |= ((uint32_t) (*(inbuffer + offset + 2))) << (8 * 2);
+      u_q3.base |= ((uint32_t) (*(inbuffer + offset + 3))) << (8 * 3);
+      this->q3 = u_q3.real;
+      offset += sizeof(this->q3);
+      union {
+        float real;
+        uint32_t base;
+      } u_q4;
+      u_q4.base = 0;
+      u_q4.base |= ((uint32_t) (*(inbuffer + offset + 0))) << (8 * 0);
+      u_q4.base |= ((uint32_t) (*(inbuffer + offset + 1))) << (8 * 1);
+      u_q4.base |= ((uint32_t) (*(inbuffer + offset + 2))) << (8 * 2);
+      u_q4.base |= ((uint32_t) (*(inbuffer + offset + 3))) << (8 * 3);
+      this->q4 = u_q4.real;
+      offset += sizeof(this->q4);
      return offset;
     }
 
-    virtual const char * getType() { return "underwalker_control/uw_read_sensor"; };
-    virtual const char * getMD5() { return "1bf3d12d7663a5c4686eb74331c3815a"; };
+    virtual const char * getType() override { return "underwalker_control/uw_read_sensor"; };
+    virtual const char * getMD5() override { return "c5f9811c87afd9b69ae8ef198604d734"; };
 
   };
 

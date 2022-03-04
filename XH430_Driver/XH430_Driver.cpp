@@ -579,7 +579,6 @@ uint8_t XH430::read_4byte_packet_sync(uint8_t id[9],
   // selected in servo)
   bool statusReceived = false;
 
-
   dy_t.reset();
   // 0.0046 s
   while (duration_cast<milliseconds>(dy_t.elapsed_time()).count() < 20)
@@ -766,9 +765,10 @@ uint8_t XH430::read_2byte_packet_sync(uint8_t id, uint16_t &data)
   return statusReceived;
 }
 
-uint8_t XH430::read_ping_status(uint8_t id)
+uint8_t XH430::read_ping_status(uint8_t id, uint8_t &data)
 {
-  uint8_t packet[52];
+  uint8_t packet[20];
+  int packet_count = 0;
   Timer dy_t;
   unsigned short CRC;
   wchar_t packet_len = 3; // packet_len = number of parameter +3
@@ -780,53 +780,116 @@ uint8_t XH430::read_ping_status(uint8_t id)
   packet[4] = id;
   packet[5] = 0x03;
   packet[6] = 0x00;
-  packet[7] = 0x01;              // Instruction 0x01 is ping
+  packet[7] = 0x01;                            // Instruction 0x01 is ping
   CRC = update_crc(0, packet, packet_len + 5); // packet length + 5
   packet[8] = (CRC & 0x00ff);
   packet[9] = (CRC >> 8) & 0x00ff;
 
   // 0.0016 s
   sXH430.write(packet, 10);
+  dy_t.reset();
   dy_t.start();
-  while (duration_cast<microseconds>(dy_t.elapsed_time()).count() < 1215)
+  while (duration_cast<microseconds>(dy_t.elapsed_time()).count() < 900)
   {
   }
 
   RTS_out.write(0);
 
-  int replySize = 13;
-  int i_count = 0;
+  int replySize = 14;
   // we'll only get a reply if it was not broadcast (and status reply option is
   // selected in servo)
   bool statusReceived = false;
 
-  if (id != 0xFE)
+  dy_t.reset();
+
+  while (duration_cast<milliseconds>(dy_t.elapsed_time()).count() < 20)
   {
-    // 0.0046 s
-
-    while (duration_cast<milliseconds>(dy_t.elapsed_time()).count() < 10)
+    if (sXH430.readable())
     {
-      if (sXH430.readable())
-      {
-        // BUGBUG: unsigned char b = _uart.getc();
-        // Bug with _uart.getc() on FRDM-K64F. Instead read directly from uart
+      // BUGBUG: unsigned char b = _uart.getc();
+      // Bug with _uart.getc() on FRDM-K64F. Instead read directly from uart
 
-        if (sXH430.read(packet, replySize) == replySize)
-        {
-          statusReceived = true;
-          break;
-        }
+      sXH430.read(packet + packet_count, 1);
+      packet_count++;
+      if (packet_count == replySize)
+      {
+        statusReceived = true;
+        break;
       }
     }
-    dy_t.stop();
   }
+  dy_t.stop();
 
   if (statusReceived)
   {
-    data = packet[9] + packet[10] * 256;
+    data = packet[8];
   }
-  else
+  RTS_out.write(1);
+
+  return statusReceived;
+}
+
+uint8_t XH430::read_moving_status(uint8_t id, uint8_t &data)
+{
+  uint8_t packet[20];
+  int packet_count = 0;
+  Timer dy_t;
+  unsigned short CRC;
+  wchar_t packet_len = 7; // packet_len = number of parameter +3
+
+  packet[0] = 0xff;
+  packet[1] = 0xff;
+  packet[2] = 0xfd;
+  packet[3] = 0x00;
+  packet[4] = id;
+  packet[5] = 0x07;
+  packet[6] = 0x00;
+  packet[7] = 0x02;
+  packet[8] = 122;
+  packet[9] = 0x00;
+  packet[10] = 0x01;
+  packet[11] = 0x00;                            // Instruction 0x01 is ping
+  CRC = update_crc(0, packet, packet_len + 5); // packet length + 5
+  packet[12] = (CRC & 0x00ff);
+  packet[13] = (CRC >> 8) & 0x00ff;
+
+  // 0.0016 s
+  sXH430.write(packet, 14);
+  dy_t.reset();
+  dy_t.start();
+  while (duration_cast<microseconds>(dy_t.elapsed_time()).count() < 1300)
   {
+  }
+  RTS_out.write(0);
+
+  int replySize = 12;
+  // we'll only get a reply if it was not broadcast (and status reply option is
+  // selected in servo)
+  bool statusReceived = false;
+
+  dy_t.reset();
+
+  while (duration_cast<milliseconds>(dy_t.elapsed_time()).count() < 20)
+  {
+    if (sXH430.readable())
+    {
+      // BUGBUG: unsigned char b = _uart.getc();
+      // Bug with _uart.getc() on FRDM-K64F. Instead read directly from uart
+
+      sXH430.read(packet + packet_count, 1);
+      packet_count++;
+      if (packet_count == replySize)
+      {
+        statusReceived = true;
+        break;
+      }
+    }
+  }
+  dy_t.stop();
+
+  if (statusReceived)
+  {
+    data = packet[9];
   }
   RTS_out.write(1);
 
@@ -837,7 +900,7 @@ uint8_t XH430::read_2byte_packet_sync(uint8_t id[9],
                                       int16_t data[9])
 {
   uint8_t packet[117];
-int packet_count = 0;
+  int packet_count = 0;
   Timer dy_t;
   unsigned short CRC;
   wchar_t packet_len = 16; // packet_len = number of parameter +3
@@ -880,7 +943,6 @@ int packet_count = 0;
   // we'll only get a reply if it was not broadcast (and status reply option is
   // selected in servo)
   bool statusReceived = false;
-
 
   dy_t.reset();
   // 0.0046 s
@@ -979,74 +1041,72 @@ void XH430::make_2byte_packet_sync(uint16_t address, uint16_t data1,
 }
 
 void XH430::make_1byte_packet_2motor(uint8_t id1, uint8_t id2, uint16_t address,
-	int8_t data)
+                                     int8_t data)
 {
 
-	uint8_t packet[18];
-	unsigned short CRC;
-	wchar_t packet_len = 11; // packet_len = number of parameter +3
+  uint8_t packet[18];
+  unsigned short CRC;
+  wchar_t packet_len = 11; // packet_len = number of parameter +3
 
-	packet[0] = 0xff;
-	packet[1] = 0xff;
-	packet[2] = 0xfd;
-	packet[3] = 0x00;
-	packet[4] = 0xfe;
-	packet[5] = packet_len & 0xff;
-	packet[6] = (packet_len >> 8) & 0xff;
-	packet[7] = 0x83;                  // Instruction 0x83 is sync_write
-	
-	packet[8] = address & 0xff;        // Address goal position 116, 0x0074
-	packet[9] = (address >> 8) & 0xff; // Address goal position 116, 0x0074
-	packet[10] = 0x01;	               // data byte 
-	packet[11] = 0x00; 
-	packet[12] = id1;
-	packet[13] = data;
-	packet[14] = id2; 
-	packet[15] = data; 
+  packet[0] = 0xff;
+  packet[1] = 0xff;
+  packet[2] = 0xfd;
+  packet[3] = 0x00;
+  packet[4] = 0xfe;
+  packet[5] = packet_len & 0xff;
+  packet[6] = (packet_len >> 8) & 0xff;
+  packet[7] = 0x83; // Instruction 0x83 is sync_write
 
-	CRC = update_crc(0, packet, packet_len + 5); // packet length + 5
-	packet[16] = (CRC & 0x00ff);
-	packet[17] = (CRC >> 8) & 0x00ff;
+  packet[8] = address & 0xff;        // Address goal position 116, 0x0074
+  packet[9] = (address >> 8) & 0xff; // Address goal position 116, 0x0074
+  packet[10] = 0x01;                 // data byte
+  packet[11] = 0x00;
+  packet[12] = id1;
+  packet[13] = data;
+  packet[14] = id2;
+  packet[15] = data;
 
-	sXH430.write(packet, 18);
+  CRC = update_crc(0, packet, packet_len + 5); // packet length + 5
+  packet[16] = (CRC & 0x00ff);
+  packet[17] = (CRC >> 8) & 0x00ff;
+
+  sXH430.write(packet, 18);
 }
 
 void XH430::make_2byte_packet_2motor(uint8_t id1, uint8_t id2, uint16_t address,
-	int8_t data)
+                                     int8_t data)
 {
 
-	uint8_t packet[20];
-	unsigned short CRC;
-	wchar_t packet_len = 13; // packet_len = number of parameter +3
+  uint8_t packet[20];
+  unsigned short CRC;
+  wchar_t packet_len = 13; // packet_len = number of parameter +3
 
-	packet[0] = 0xff;
-	packet[1] = 0xff;
-	packet[2] = 0xfd;
-	packet[3] = 0x00;
-	packet[4] = 0xfe;
-	packet[5] = packet_len & 0xff;
-	packet[6] = (packet_len >> 8) & 0xff;
-	packet[7] = 0x83;                  // Instruction 0x83 is sync_write
+  packet[0] = 0xff;
+  packet[1] = 0xff;
+  packet[2] = 0xfd;
+  packet[3] = 0x00;
+  packet[4] = 0xfe;
+  packet[5] = packet_len & 0xff;
+  packet[6] = (packet_len >> 8) & 0xff;
+  packet[7] = 0x83; // Instruction 0x83 is sync_write
 
-	packet[8] = address & 0xff;        // Address goal position 116, 0x0074
-	packet[9] = (address >> 8) & 0xff; // Address goal position 116, 0x0074
-	packet[10] = 0x01;	               // data byte 
-	packet[11] = 0x00;
-	packet[12] = id1;
-	packet[13] = data & 0xff;
-	packet[14] = (data >> 8) & 0xff;
-	packet[15] = id2;
-	packet[16] = data & 0xff;
-	packet[17] = (data >> 8) & 0xff;
+  packet[8] = address & 0xff;        // Address goal position 116, 0x0074
+  packet[9] = (address >> 8) & 0xff; // Address goal position 116, 0x0074
+  packet[10] = 0x01;                 // data byte
+  packet[11] = 0x00;
+  packet[12] = id1;
+  packet[13] = data & 0xff;
+  packet[14] = (data >> 8) & 0xff;
+  packet[15] = id2;
+  packet[16] = data & 0xff;
+  packet[17] = (data >> 8) & 0xff;
 
+  CRC = update_crc(0, packet, packet_len + 5); // packet length + 5
+  packet[18] = (CRC & 0x00ff);
+  packet[19] = (CRC >> 8) & 0x00ff;
 
-	CRC = update_crc(0, packet, packet_len + 5); // packet length + 5
-	packet[18] = (CRC & 0x00ff);
-	packet[19] = (CRC >> 8) & 0x00ff;
-
-	sXH430.write(packet, 20);
+  sXH430.write(packet, 20);
 }
-
 
 void XH430::make_1byte_packet_sync(uint16_t address, uint8_t data1,
                                    uint8_t data2, uint8_t data3, uint8_t data4,
@@ -1065,8 +1125,8 @@ void XH430::make_1byte_packet_sync(uint16_t address, uint8_t data1,
   packet[4] = 0xfe;
   packet[5] = packet_len & 0xff;
   packet[6] = (packet_len >> 8) & 0xff;
-  packet[7] = 0x83;                  // Instruction 0x83 is sync_write
-  
+  packet[7] = 0x83; // Instruction 0x83 is sync_write
+
   packet[8] = address & 0xff;        // Address goal position 116, 0x0074
   packet[9] = (address >> 8) & 0xff; // Address goal position 116, 0x0074
   packet[10] = 0x01;                 // data length = 1 byte

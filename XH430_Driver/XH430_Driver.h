@@ -97,6 +97,11 @@ public:
     uint8_t read_2byte_packet_sync(uint8_t id[9],
                                    int16_t data[9]);
     uint8_t read_2byte_packet_sync(uint8_t id, uint16_t &data);
+
+    uint8_t read_ping_status(uint8_t id, uint8_t &data);
+
+    uint8_t read_moving_status(uint8_t id, uint8_t &data);
+
     void make_2byte_packet_sync(uint16_t address,
                                 uint16_t data1, uint16_t data2,
                                 uint16_t data3, uint16_t data4,

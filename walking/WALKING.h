@@ -16,13 +16,17 @@ public:
     ~WALKING();
     /***Reboot***/
 
-    void walking_func(void);
+    void walking_func1(void);
+    void walking_func2(void);
+
     void set_tick(uint8_t onoff, microseconds wait_time);
 
-    void set_profile(int8_t count, float amplitude,
-                            float offset, int8_t pattern, int8_t count_diff);
+    void set_profile(int8_t count, int8_t stride_front,
+                           int8_t stride_rear, int8_t pattern);
                             
-    void set_cont(uint8_t cont);
+    void start_walking(void);
+    void stop_walking(void);
+
     void set_direction(uint8_t direction);    
     void set_period(float period);
 
@@ -38,21 +42,26 @@ private:
 
     int32_t walking_profile[4][32];
 
-    Ticker walking_tick0;
     Ticker walking_tick1;
+    Ticker walking_tick2;
+
+    int8_t direction_;
+    int8_t cont_;
 
     int8_t stride_front;
     int8_t stride_rear;
     float period_front_go;
-    float period_front_back;
-    float period_rear_go;
+    float period_front_back;    
     float period_rear_back;
+    float period_rear_go;
 
-    float delay_time;
+    int32_t delay_time;
 
-    int8_t walk_count;
+    int8_t walk1_count;
+    int8_t walk2_count;
 
-    int32_t glob_wait; 
+    int32_t glob_wait1; 
+    int32_t glob_wait2;
 
     uint32_t motor_ang_arr[4];
     uint32_t pre_motor_ang_arr[4];

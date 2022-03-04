@@ -36,7 +36,7 @@ PELVIC pelvic_r(12, 14, &DXL);
 
 PECTORAL pectoral(1, 2, 3, 4, &DXL);
 
-BUOYANCY buoyancy(98, 99, &DXL); // taesik √ﬂ∞°
+BUOYANCY buoyancy(98, 99, &DXL); // taesik Ï∂îÍ∞Ä
 
 MS5837 bar_sensor(p28, p27, 0x76);
 IMU_3DM imu(115200, p13, p14);
@@ -65,7 +65,7 @@ Thread thread1;
 
 int ccount = 0;
 
-void bar_thread() // æ–∑¬∞Ë
+void bar_thread() // ÏïïÎ†•Í≥Ñ
 {
   bar_sensor.init();
   bar_sensor.setModel(MS5837::MS5837_02BA);
@@ -87,7 +87,7 @@ void read_dy_func()
 
   underwalker_control::uw_read_sensor msg_uw_sensor;
 
-  if (DXL.read_4byte_packet_sync(id, position) == 1) // dynamixel read µ«∏È,
+  if (DXL.read_4byte_packet_sync(id, position) == 1) // dynamixel read ÎêòÎ©¥,
   {
     for (int i = 0; i < 9; i++)
     {
@@ -129,7 +129,7 @@ void read_dy_func()
 
 Ticker read_dy_tick;
 
-// Buoyancy Control// taesik √ﬂ∞°
+// Buoyancy Control// taesik Ï∂îÍ∞Ä
 void buoyancy_initialization()
 {
   // step1 : torque enable
@@ -250,7 +250,7 @@ int main()
       ThisThread::sleep_for(300ms);
 
       // step4 : set goal current (for setting zero-point)
-      DXL.make_2byte_packet(98, WRITE, CURRENT_LIMIT, 125); // Current ∞™¿ª ¿–∞Ì, ±◊ ¿–¥¬ ∞™¿Ã threshold∫∏¥Ÿ ≈¨ ∞ÊøÏ set point
+      DXL.make_2byte_packet(98, WRITE, CURRENT_LIMIT, 125); // Current Í∞íÏùÑ ÏùΩÍ≥†, Í∑∏ ÏùΩÎäî Í∞íÏù¥ thresholdÎ≥¥Îã§ ÌÅ¥ Í≤ΩÏö∞ set point
       ThisThread::sleep_for(300ms);
       DXL.make_2byte_packet(99, WRITE, CURRENT_LIMIT, 125);
       ThisThread::sleep_for(300ms);
@@ -301,7 +301,7 @@ int main()
       ThisThread::sleep_for(300ms);
     }
 
-    nh.spinOnce(); // callback «‘ºˆ√≥∏Æ
+    nh.spinOnce(); // callback Ìï®ÏàòÏ≤òÎ¶¨
 
     /*
     printf("%f   %f %f %f %d   %f %f %f %d   %f %f %f %d \r\n", bar, roll,

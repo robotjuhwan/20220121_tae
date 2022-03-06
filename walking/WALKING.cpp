@@ -13,22 +13,20 @@ WALKING::WALKING(uint8_t id1, uint8_t id2, uint8_t id3, uint8_t id4, XH430 *dxl)
     direction_ = 0;
     cont_ = 0;
 
-    direction_ = 1;
-    cont_ = 1;
-
     stride_front = 30;
     stride_rear = 30;
-    period_front_go = 1.0;
+    period_front_go = 2.0;
     period_front_back = 2.0;
-    period_rear_go = 1.0;
+    period_rear_go = 2.0;
     period_rear_back = 2.0;
 
-    period_front_go2 = 1.0;
+    period_front_go2 = 2.0;
     period_front_back2 = 2.0;
-    period_rear_go2 = 1.0;
+    period_rear_go2 = 2.0;
     period_rear_back2 = 2.0;
 
     delay_time = 500.0;
+    delay_time2 = 500.0;
 
     walk1_count = 0;
     walk1_func_comp = 0;
@@ -37,6 +35,10 @@ WALKING::WALKING(uint8_t id1, uint8_t id2, uint8_t id3, uint8_t id4, XH430 *dxl)
 
     glob_wait1 = 100;
     glob_wait2 = 100;
+
+    mode_change = 0;
+
+    walking_func_start = 0;
 
     motor_ang_arr[0] = 2048;
     motor_ang_arr[1] = 2048;
@@ -74,8 +76,6 @@ WALKING::~WALKING(){};
 
 void WALKING::walking_thread()
 {
-    uint8_t mode_change = 0;
-
     while (true)
     {
         if (walk1_count == 9 && mode_change != 9 && walk1_func_comp == 1)
@@ -93,7 +93,7 @@ void WALKING::walking_thread()
             if (walk2_count == 25 && mode_change != 25 && walk2_func_comp == 1)
             {
                 mode_change = 25;
-                ThisThread::sleep_for(delay_time * 1ms);
+                ThisThread::sleep_for(delay_time2 * 1ms);
                 WALKING::set_tick(1, 1, (int)(1000.0 / 32.0 * period_rear_go) * 1ms);
                 WALKING::set_tick(2, 1, (int)(1000.0 / 32.0 * period_front_go2) * 1ms);
             }
@@ -203,12 +203,12 @@ void WALKING::walking_func1(void)
 
         pre_motor_ang_arr[0] = motor_ang_arr[0];
         pre_motor_ang_arr[3] = motor_ang_arr[3];
-    }
 
-    walk1_count++;
-    if (walk1_count > 31)
-    {
-        walk1_count = 0;
+        walk1_count++;
+        if (walk1_count > 31)
+        {
+            walk1_count = 0;
+        }
     }
 
     walk1_func_comp = 1;
@@ -282,14 +282,13 @@ void WALKING::walking_func2(void)
 
         pre_motor_ang_arr[1] = motor_ang_arr[1];
         pre_motor_ang_arr[2] = motor_ang_arr[2];
-    }
 
-    walk2_count++;
-    if (walk2_count > 31)
-    {
-        walk2_count = 0;
+        walk2_count++;
+        if (walk2_count > 31)
+        {
+            walk2_count = 0;
+        }
     }
-
     walk2_func_comp = 1;
 }
 
@@ -325,14 +324,37 @@ void WALKING::set_tick(uint8_t select, uint8_t onoff, microseconds wait_time)
 
 void WALKING::start_walking(void)
 {
-    WALKING::set_tick(1, 1, (int)(1000.0 / 32.0 * period_front_go) * 1ms);
-    WALKING::set_tick(2, 1, (int)(1000.0 / 32.0 * period_rear_back2) * 1ms);
+    if (walking_func_start == 0)
+    {
+        walking_func_start = 1;
+        WALKING::set_tick(1, 1, (int)(1000.0 / 32.0 * period_front_go) * 1ms);
+        WALKING::set_tick(2, 1, (int)(1000.0 / 32.0 * period_rear_back2) * 1ms);
+    }
 }
 
 void WALKING::stop_walking(void)
 {
-    WALKING::set_tick(1, 0, 0ms);
-    WALKING::set_tick(2, 0, 0ms);
+    if (walking_func_start == 1)
+    {
+        walking_func_start = 0;
+        WALKING::set_tick(1, 0, 0ms);
+        WALKING::set_tick(2, 0, 0ms);
+
+        mode_change = 0;
+
+        walk1_count = 0;
+        walk1_func_comp = 0;
+        walk2_count = 0;
+        walk2_func_comp = 0;
+
+        cont_ = 0;
+        direction_ = 0;
+    }
+}
+
+void WALKING::set_cont(uint8_t cont)
+{
+    cont_ = cont;
 }
 
 void WALKING::set_direction(uint8_t direction)
@@ -340,9 +362,23 @@ void WALKING::set_direction(uint8_t direction)
     direction_ = direction;
 }
 
-void WALKING::set_period(float period)
+void WALKING::set_period(float f_go, float f_back, float r_go, float r_back, float f_go2, float f_back2, float r_go2, float r_back2)
 {
-    //WALKING::set_tick(1, (int)(1000.0 / 32.0 * period) * 1ms);
+    period_front_go = f_go;
+    period_front_back = f_back;
+    period_rear_back = r_go;
+    period_rear_go = r_back;
+
+    period_front_go2 = f_go2;
+    period_front_back2 = f_back2;
+    period_rear_back2 = r_go2;
+    period_rear_go2 = r_back2;
+}
+
+void WALKING::set_delay_time(int32_t d_time, int32_t d_time2)
+{
+    delay_time = d_time;
+    delay_time2 = d_time2;
 }
 
 int8_t WALKING::get_walk_count(uint8_t select)

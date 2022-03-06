@@ -365,8 +365,8 @@ namespace underwalker_control
      return offset;
     }
 
-    virtual const char * getType() { return "underwalker_control/uw_control_v2"; };
-    virtual const char * getMD5() { return "aa321638c85d92b391ed56d0d5f9df2b"; };
+    const char * getType(){ return "underwalker_control/uw_control_v2"; };
+    const char * getMD5(){ return "aa321638c85d92b391ed56d0d5f9df2b"; };
 
   };
 

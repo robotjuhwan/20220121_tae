@@ -20,8 +20,9 @@
 #include <underwalker_control/uw_control_pelvic.h>
 #include <underwalker_control/uw_read_sensor.h>
 #include <underwalker_control/uw_control_v.h>
+#include <underwalker_control/uw_control_walking.h>
 
-#define BLINKING_RATE 100ms
+#define BLINKING_RATE 20ms
 // swimming////////////////////////////////////////////////////////////
 
 ros::NodeHandle nh;
@@ -43,11 +44,6 @@ WALKING walking(1, 2, 3, 4, &DXL);
 
 MS5837 bar_sensor(p28, p27, 0x76);
 IMU_3DM imu(115200, p13, p14);
-
-int8_t bouy_cali = 0;
-uint8_t glob_mode = 0;
-uint8_t bouy_front = 0;
-uint8_t bouy_rear = 0;
 
 int8_t glob_direction = 0;
 //**global variable -end
@@ -134,10 +130,8 @@ Ticker read_dy_tick;
 
 void message_v(const underwalker_control::uw_control_v &msg_) // taesik buoyancy callback function
 {
-  glob_mode = msg_.mode;
-  bouy_front = msg_.buoy_front;
-  bouy_rear = msg_.buoy_rear;
-  buoyancy.write_ang(bouy_front, bouy_rear);
+  buoyancy.set_mode(msg_.mode);
+  buoyancy.set_angle(msg_.buoy_front, msg_.buoy_rear);
 }
 // Buoyancy Control//
 
@@ -170,6 +164,25 @@ void message_pec(const underwalker_control::uw_control_pectoral &msg_)
   pectoral.set_period(msg_.period);
 }
 
+void message_walking(const underwalker_control::uw_control_walking &msg_)
+{
+  walking.set_profile(msg_.count, msg_.stride_front, msg_.stride_rear, msg_.pattern);
+
+  walking.set_cont(msg_.cont);
+  walking.set_direction(msg_.direction);
+  walking.set_period(msg_.f_go, msg_.f_back, msg_.r_go, msg_.r_back, msg_.f_go2, msg_.f_back2, msg_.r_go2, msg_.r_back2);
+  walking.set_delay_time(msg_.d_time, msg_.d_time2);
+
+  if (msg_.start_sig == 1)
+  {
+    walking.start_walking();
+  }
+  if (msg_.start_sig == 2)
+  {
+    walking.stop_walking();
+  }
+}
+
 char inChar = 0;
 
 int main()
@@ -193,58 +206,21 @@ int main()
   ros::Subscriber<underwalker_control::uw_control_pelvic> sub_pel_r("uw_pelvic_r", &message_pelvic_r);
   ros::Subscriber<underwalker_control::uw_control_pectoral> sub_pec("uw_pectoral", &message_pec);
   ros::Subscriber<underwalker_control::uw_control_v> sub_v("uw_v", &message_v);
+  ros::Subscriber<underwalker_control::uw_control_walking> sub_walk("uw_walking", &message_walking);
 
   nh.subscribe(sub_pel_l);
   nh.subscribe(sub_pel_r);
   nh.subscribe(sub_pec);
   nh.subscribe(sub_v);
+  nh.subscribe(sub_walk);
 
-  read_dy_tick.attach(&read_dy_func, BLINKING_RATE); // Ticker read_dy_tick(&callback, timing)
+  read_dy_tick.attach(&read_dy_func, 100ms); // Ticker read_dy_tick(&callback, timing)
 
-  printf("Start\r\n");
-
-  printf("set_profile_0\r\n");
-  walking.set_profile(0, 45, 25, 1);
-  ThisThread::sleep_for(300ms);
-
-  printf("set_profile_1\r\n");
-  walking.set_profile(1, 45, 25, 1);
-  ThisThread::sleep_for(300ms);
-
-  printf("set_profile_2\r\n");
-  walking.set_profile(2, 60, 60, 0);
-  ThisThread::sleep_for(300ms);
-
-  printf("set_profile_3\r\n");
-  walking.set_profile(3, 60, 60, 0);
-  ThisThread::sleep_for(300ms);
-
-  printf("start_walking\r\n");
-  walking.start_walking();
-  ThisThread::sleep_for(300ms);
-  printf("initialization\r\n");
-  buoyancy.initialization();
-  
   while (true)
   {
     led = !led;
-    printf("%d  %d\r\n",walking.get_walk_count(1),walking.get_walk_count(2));
-    if (glob_mode == 1 && bouy_cali == 0)
-    {
-      
-      bouy_cali = 1;
-    }
-    else if (glob_mode == 2)
-    {
-      int rot_angle_ft = -1 * int(4096 * bouy_front); // -1 is direction
-      int rot_angle_rr = -1 * int(4096 * bouy_rear);
-      DXL.make_4byte_packet(98, WRITE, GOAL_POSITION, rot_angle_ft);
-      ThisThread::sleep_for(300ms);
-      DXL.make_4byte_packet(99, WRITE, GOAL_POSITION, rot_angle_rr);
-      ThisThread::sleep_for(300ms);
-    }
 
-    //nh.spinOnce(); // callback 함수처리
+    nh.spinOnce(); // callback 함수처리
 
     /*
     printf("%f   %f %f %f %d   %f %f %f %d   %f %f %f %d \r\n", bar, roll,

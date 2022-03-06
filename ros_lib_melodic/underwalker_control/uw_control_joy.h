@@ -66,7 +66,7 @@ namespace underwalker_control
     {
     }
 
-    virtual int serialize(unsigned char *outbuffer) const override
+    virtual int serialize(unsigned char *outbuffer) const
     {
       int offset = 0;
       offset += this->header.serialize(outbuffer + offset);
@@ -199,7 +199,7 @@ namespace underwalker_control
       return offset;
     }
 
-    virtual int deserialize(unsigned char *inbuffer) override
+    virtual int deserialize(unsigned char *inbuffer)
     {
       int offset = 0;
       offset += this->header.deserialize(inbuffer + offset);
@@ -347,8 +347,8 @@ namespace underwalker_control
      return offset;
     }
 
-    virtual const char * getType() override { return "underwalker_control/uw_control_joy"; };
-    virtual const char * getMD5() override { return "a2060a0f56164af5dedbe273ec768d14"; };
+    const char * getType(){ return "underwalker_control/uw_control_joy"; };
+    const char * getMD5(){ return "a2060a0f56164af5dedbe273ec768d14"; };
 
   };
 

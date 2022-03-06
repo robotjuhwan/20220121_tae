@@ -198,8 +198,8 @@ void WALKING::walking_func1(void)
             }
         }
 
-        dxl_->make_4byte_packet_sync_velocity(id1_, id4_, velocity_arr[0], velocity_arr[1]);
-        dxl_->make_4byte_packet_sync(id1_, id4_, motor_ang_arr[0], motor_ang_arr[1]);
+        dxl_->make_4byte_packet_sync_velocity(id1_, id4_, velocity_arr[0], velocity_arr[3]);
+        dxl_->make_4byte_packet_sync(id1_, id4_, motor_ang_arr[0], motor_ang_arr[3]);
 
         pre_motor_ang_arr[0] = motor_ang_arr[0];
         pre_motor_ang_arr[3] = motor_ang_arr[3];

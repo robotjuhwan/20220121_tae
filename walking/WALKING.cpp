@@ -78,7 +78,16 @@ void WALKING::walking_thread()
 {
     while (true)
     {
-        if (walk1_count == 9 && mode_change != 9 && walk1_func_comp == 1)
+        if (walk1_count == 1 && mode_change != 1 && walk1_func_comp == 1)
+        {
+            if (walk2_count == 1 && mode_change != 1 && walk2_func_comp == 1)
+            {
+                mode_change = 1;
+                //WALKING::set_tick(1, 1, (int)(1000.0 / 32.0 * period_front_go) * 1ms);
+                //WALKING::set_tick(2, 1, (int)(1000.0 / 32.0 * period_rear_back2) * 1ms);
+            }
+        }
+        else if (walk1_count == 9 && mode_change != 9 && walk1_func_comp == 1)
         {
             if (walk2_count == 9 && mode_change != 9 && walk2_func_comp == 1)
             {
@@ -88,6 +97,15 @@ void WALKING::walking_thread()
                 WALKING::set_tick(2, 1, (int)(1000.0 / 32.0 * period_rear_go2) * 1ms);
             }
         }
+        else if (walk1_count == 17 && mode_change != 17 && walk1_func_comp == 1)
+        {
+            if (walk2_count == 17 && mode_change != 17 && walk2_func_comp == 1)
+            {
+                mode_change = 17;
+                //WALKING::set_tick(1, 1, (int)(1000.0 / 32.0 * period_rear_back) * 1ms);
+                //WALKING::set_tick(2, 1, (int)(1000.0 / 32.0 * period_front_go2) * 1ms);
+            }
+        }
         else if (walk1_count == 25 && mode_change != 25 && walk1_func_comp == 1)
         {
             if (walk2_count == 25 && mode_change != 25 && walk2_func_comp == 1)
@@ -95,7 +113,7 @@ void WALKING::walking_thread()
                 mode_change = 25;
                 ThisThread::sleep_for(delay_time2 * 1ms);
                 WALKING::set_tick(1, 1, (int)(1000.0 / 32.0 * period_rear_go) * 1ms);
-                WALKING::set_tick(2, 1, (int)(1000.0 / 32.0 * period_front_go2) * 1ms);
+                WALKING::set_tick(2, 1, (int)(1000.0 / 32.0 * period_front_back2) * 1ms);
             }
         }
         else
@@ -119,11 +137,11 @@ void WALKING::set_profile(int8_t count, uint8_t stride_front,
         {
             if (i < 16)
             {
-                walking_profile[count][i] = (pro_profile[i] * amplitude_front) * 1024 + 2048;
+                walking_profile[count][i] = (pro_profile[i] * (amplitude_front+amplitude_rear)/2 + (amplitude_front-amplitude_rear)/2) * 1024 + 2048;
             }
             else
             {
-                walking_profile[count][i] = (pro_profile[i] * amplitude_rear) * 1024 + 2048;
+                walking_profile[count][i] = (pro_profile[i] * (amplitude_front+amplitude_rear)/2 + (amplitude_front-amplitude_rear)/2) * 1024 + 2048;
             }
         }
     }
@@ -145,6 +163,7 @@ void WALKING::set_profile(int8_t count, uint8_t stride_front,
 
 void WALKING::walking_func1(void)
 {
+
     walk1_func_comp = 0;
 
     if (cont_ == 1)
@@ -163,19 +182,19 @@ void WALKING::walking_func1(void)
 
         if (walk1_count == 0) // 1st period
         {
-            WALKING::set_tick(1, 1, (int)(1000.0 / 32.0 * period_front_go) * 1ms);
+            //WALKING::set_tick(1, 0, (int)(1000.0 / 32.0 * period_rear_go) * 1ms);
         }
         else if (walk1_count == 8) // 1st period
         {
-            WALKING::set_tick(1, 0, 0ms);
+            WALKING::set_tick(1, 0, (int)(1000.0 / 32.0 * period_rear_go) * 1ms);
         }
         else if (walk1_count == 16) // 2nd period
         {
-            WALKING::set_tick(1, 1, (int)(1000.0 / 32.0 * period_rear_back) * 1ms);
+            //WALKING::set_tick(1, 0, (int)(1000.0 / 32.0 * period_front_back) * 1ms);
         }
         else if (walk1_count == 24)
         {
-            WALKING::set_tick(1, 0, 0ms);
+            WALKING::set_tick(1, 0, (int)(1000.0 / 32.0 * period_front_back) * 1ms);
         }
 
         for (int i = 0; i < 4; i = i + 3)
@@ -242,19 +261,19 @@ void WALKING::walking_func2(void)
 
         if (walk2_count == 0) // 1st period
         {
-            WALKING::set_tick(2, 1, (int)(1000.0 / 32.0 * period_rear_back2) * 1ms);
+            //WALKING::set_tick(2, 0, (int)(1000.0 / 32.0 * period_front_back2) * 1ms);
         }
         else if (walk2_count == 8) // 1st period
         {
-            WALKING::set_tick(2, 0, 0ms);
+            WALKING::set_tick(2, 0, (int)(1000.0 / 32.0 * period_front_back2) * 1ms);
         }
         else if (walk2_count == 16) // 2nd period
         {
-            WALKING::set_tick(2, 1, (int)(1000.0 / 32.0 * period_front_go2) * 1ms);
+            //WALKING::set_tick(2, 0, (int)(1000.0 / 32.0 * period_rear_go2) * 1ms);
         }
         else if (walk2_count == 24)
         {
-            WALKING::set_tick(2, 0, 0ms);
+            WALKING::set_tick(2, 0, (int)(1000.0 / 32.0 * period_rear_go2) * 1ms);
         }
 
         for (int i = 1; i < 3; i++)
@@ -366,13 +385,13 @@ void WALKING::set_period(float f_go, float f_back, float r_go, float r_back, flo
 {
     period_front_go = f_go;
     period_front_back = f_back;
-    period_rear_back = r_go;
-    period_rear_go = r_back;
+    period_rear_back = r_back;
+    period_rear_go = r_go;
 
     period_front_go2 = f_go2;
     period_front_back2 = f_back2;
-    period_rear_back2 = r_go2;
-    period_rear_go2 = r_back2;
+    period_rear_go2 = r_go2;
+    period_rear_back2 = r_back2;
 }
 
 void WALKING::set_delay_time(int32_t d_time, int32_t d_time2)
